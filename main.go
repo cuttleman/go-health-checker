@@ -1,40 +1,54 @@
 package main
 
 import (
-	"accounts"
-	"dictionary"
 	"fmt"
-	"log"
+	"net/http"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-func bank() {
-	account := accounts.NewAccount("juno")
-
-	account.Deposit(11)
-
-	err := account.Withdraw(10)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	fmt.Printf("total balance : %d\n", account.GetBalance())
-}
-
-func dict() {
-	dictionary := dictionary.Dictionary{"hello": "안녕"}
-	dictionary.Add("hello2", "안녕2")
-
-	value, err2 := dictionary.Search("hello2")
-	if err2 != nil {
-		fmt.Println(err2)
-
-		fmt.Println(dictionary)
-	} else {
-		fmt.Println(value)
-	}
-
+type result struct {
+	url  string
+	code int
 }
 
 func main() {
-	dict()
+	c := make(chan *result)
+	results := make(map[string]int)
+	urls := []string{
+		"https://www.airbnb.com/",
+		"https://www.google.com/",
+		"https://www.amazon.com/",
+		"https://www.reddit.com/",
+		"https://www.google.com/",
+		"https://soundcloud.com/",
+		"https://www.facebook.com/",
+		"https://www.instagram.com/",
+		"https://academy.nomadcoders.co/",
+	}
+
+	for _, url := range urls {
+		go urlChecker(url, c)
+	}
+
+	for i := 0; i < len(urls); i++ {
+		resulted := <-c
+		results[resulted.url] = resulted.code
+	}
+
+	for url, code := range results {
+		fmt.Println(url, code)
+	}
+}
+
+func urlChecker(url string, c chan<- *result) {
+	resp, err := http.Get(url)
+
+	if err != nil {
+		c <- &result{url: url, code: 0}
+	}
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	fmt.Println(doc)
+	c <- &result{url: url, code: resp.StatusCode}
 }
