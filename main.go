@@ -2,53 +2,41 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-type result struct {
-	url  string
-	code int
-}
+var baseURL string = "https://www.saramin.co.kr/zf_user/jobs/list/job-category?page=1&cat_kewd=87&search_optional_item=n&search_done=y&panel_count=y&preview=y&isAjaxRequest=0&page_count=50&sort=RL&type=job-category&is_param=1&isSearchResultEmpty=1&isSectionHome=0&searchParamCount=1#searchTitle"
 
 func main() {
-	c := make(chan *result)
-	results := make(map[string]int)
-	urls := []string{
-		"https://www.airbnb.com/",
-		"https://www.google.com/",
-		"https://www.amazon.com/",
-		"https://www.reddit.com/",
-		"https://www.google.com/",
-		"https://soundcloud.com/",
-		"https://www.facebook.com/",
-		"https://www.instagram.com/",
-		"https://academy.nomadcoders.co/",
-	}
+	pages := getPages()
+	fmt.Println(pages)
+}
 
-	for _, url := range urls {
-		go urlChecker(url, c)
-	}
+func getPages() int {
+	resp, err := http.Get(baseURL)
 
-	for i := 0; i < len(urls); i++ {
-		resulted := <-c
-		results[resulted.url] = resulted.code
-	}
+	checkErr(err)
+	defer resp.Body.Close()
+	checkCode(resp)
 
-	for url, code := range results {
-		fmt.Println(url, code)
+	doc, queryErr := goquery.NewDocumentFromReader(resp.Body)
+	checkErr(queryErr)
+	fmt.Println(doc)
+
+	return 0
+}
+
+func checkErr(err error) {
+	if err != nil {
+		log.Fatalln("Error:", err)
 	}
 }
 
-func urlChecker(url string, c chan<- *result) {
-	resp, err := http.Get(url)
-
-	if err != nil {
-		c <- &result{url: url, code: 0}
+func checkCode(resp *http.Response) {
+	if resp.StatusCode != 200 {
+		log.Fatalln("Request failed with status:", resp.StatusCode)
 	}
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	fmt.Println(doc)
-	c <- &result{url: url, code: resp.StatusCode}
 }
