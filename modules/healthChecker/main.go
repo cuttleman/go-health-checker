@@ -54,7 +54,7 @@ func getChainInfo() map[uint64][]gjson.Result {
 
 func fetchNode(node string, c chan<- Node) {
 	client := http.Client{
-		Timeout: time.Second / 2,
+		Timeout: time.Second / 5,
 	}
 	parameters := RpcRequest{1, "2.0", "eth_blockNumber", []interface{}{}}
 	pbytes, _ := json.Marshal(parameters)
