@@ -65,7 +65,7 @@ func fetchNode(node string, c chan<- Node) {
 	start := time.Now()
 	resp, err := client.Post(node, "application/json", pbuff)
 	latency := time.Since(start)
-
+	fmt.Println(latency, latency.Milliseconds())
 	if err != nil {
 		c <- Node{"", 0, 0}
 
@@ -106,7 +106,7 @@ func Execute(chainId uint64) (string, error) {
 
 		for i := 0; i < nodesLength; i++ {
 			fetchedNode := <-c
-			if fetchedNode.Url != "" && fetchedNode.Height > 0 && fetchedNode.Latency > 0 {
+			if fetchedNode.Url != "" && fetchedNode.Height > 0 {
 				nodes = append(nodes, fetchedNode)
 			}
 		}
