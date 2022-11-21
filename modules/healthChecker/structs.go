@@ -1,7 +1,5 @@
 package healthChecker
 
-import "strconv"
-
 type RpcRequest struct {
 	Id      int8          `json:"id"`
 	Jsonrpc string        `json:"jsonrpc"`
@@ -10,7 +8,9 @@ type RpcRequest struct {
 }
 
 type Node struct {
-	Url, Latency, Height string
+	Url     string
+	Latency int64
+	Height  int64
 }
 
 type SortByLatencyWithHeight []Node
@@ -18,10 +18,10 @@ type SortByLatencyWithHeight []Node
 func (a SortByLatencyWithHeight) Len() int      { return len(a) }
 func (a SortByLatencyWithHeight) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a SortByLatencyWithHeight) Less(i, j int) bool {
-	h1, _ := strconv.Atoi(a[i].Height)
-	h2, _ := strconv.Atoi(a[j].Height)
-	l1, _ := strconv.Atoi(a[i].Latency)
-	l2, _ := strconv.Atoi(a[j].Latency)
+	h1 := a[i].Height
+	h2 := a[j].Height
+	l1 := a[i].Latency
+	l2 := a[j].Latency
 
 	if h2-h1 > 0 {
 		return false

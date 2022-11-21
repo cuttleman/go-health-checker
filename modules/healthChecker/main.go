@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -66,7 +67,7 @@ func fetchNode(node string, c chan<- Node) {
 	latency := time.Since(start)
 
 	if err != nil {
-		c <- Node{"", "", ""}
+		c <- Node{"", 0, 0}
 
 		return
 	}
@@ -75,9 +76,11 @@ func fetchNode(node string, c chan<- Node) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	bodyToString := string(body)
-	height := gjson.Get(bodyToString, "result").String()
+	hexHeight := gjson.Get(bodyToString, "result").String()
+	cleanedHeight := strings.Replace(hexHeight, "0x", "", -1)
+	intHeight, _ := strconv.ParseInt(cleanedHeight, 16, 64)
 
-	c <- Node{node, strconv.Itoa(int(latency.Milliseconds())), height}
+	c <- Node{node, latency.Milliseconds(), intHeight}
 }
 
 // * Export
@@ -103,7 +106,7 @@ func Execute(chainId uint64) (string, error) {
 
 		for i := 0; i < nodesLength; i++ {
 			fetchedNode := <-c
-			if fetchedNode.Url != "" && fetchedNode.Height != "" && fetchedNode.Latency != "" {
+			if fetchedNode.Url != "" && fetchedNode.Height > 0 && fetchedNode.Latency > 0 {
 				nodes = append(nodes, fetchedNode)
 			}
 		}
