@@ -2,6 +2,8 @@ package main
 
 import (
 	"healthChecker"
+	"log"
+	"os"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -15,10 +17,20 @@ type Result struct {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	e.GET("/", func(c echo.Context) error {
+		return c.String(200, "Hello Health Checker")
+	})
 
 	e.GET("/chain/:id", func(c echo.Context) error {
 		chainId := c.Param("id")
@@ -42,5 +54,5 @@ func main() {
 		return c.JSON(statusCode, result)
 	})
 
-	e.Logger.Fatal(e.Start(":4000"))
+	e.Logger.Fatal(e.Start(":" + port))
 }

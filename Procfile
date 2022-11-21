@@ -1,1 +1,1 @@
-web: bin/healthchecker
+web: bin/healthchecker-server
