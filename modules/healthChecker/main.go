@@ -15,7 +15,8 @@ import (
 )
 
 func getExtraChainInfo(chainId uint64) []gjson.Result {
-	resp, err := http.Get(ExtraRPCUrl)
+	client := http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get(ExtraRPCUrl)
 
 	CheckErr(err)
 	defer resp.Body.Close()
@@ -32,7 +33,8 @@ func getExtraChainInfo(chainId uint64) []gjson.Result {
 }
 
 func getChainInfo() map[uint64][]gjson.Result {
-	resp, err := http.Get(BaseUrl)
+	client := http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get(BaseUrl)
 
 	CheckErr(err)
 	defer resp.Body.Close()
@@ -55,9 +57,7 @@ func getChainInfo() map[uint64][]gjson.Result {
 }
 
 func fetchNode(node string, c chan<- Node) {
-	client := http.Client{
-		Timeout: time.Second / 2,
-	}
+	client := http.Client{Timeout: time.Second / 2}
 	parameters := RpcRequest{1, "2.0", "eth_blockNumber", []interface{}{}}
 	pbytes, _ := json.Marshal(parameters)
 	pbuff := bytes.NewBuffer(pbytes)
@@ -65,7 +65,7 @@ func fetchNode(node string, c chan<- Node) {
 	start := time.Now()
 	resp, err := client.Post(node, "application/json", pbuff)
 	latency := time.Since(start)
-	fmt.Println(latency, latency.Milliseconds())
+
 	if err != nil {
 		c <- Node{"", 0, 0}
 
@@ -74,6 +74,12 @@ func fetchNode(node string, c chan<- Node) {
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		c <- Node{"", 0, 0}
+
+		return
+	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
 	bodyToString := string(body)
 	hexHeight := gjson.Get(bodyToString, "result").String()
@@ -81,6 +87,7 @@ func fetchNode(node string, c chan<- Node) {
 	intHeight, _ := strconv.ParseInt(cleanedHeight, 16, 64)
 
 	c <- Node{node, latency.Milliseconds(), intHeight}
+
 }
 
 // * Export
