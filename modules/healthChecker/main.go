@@ -3,6 +3,7 @@ package healthChecker
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -109,6 +110,9 @@ func Execute(chainId uint64) (string, error) {
 
 		if len(nodes) > 0 {
 			sort.Sort(SortByLatencyWithHeight(nodes))
+			fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
+			fmt.Println(nodes)
+			fmt.Println(">---------------------------------------------------------------<")
 
 			return nodes[0].Url, nil
 		}

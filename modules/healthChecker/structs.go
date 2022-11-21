@@ -3,10 +3,10 @@ package healthChecker
 import "strconv"
 
 type RpcRequest struct {
-	Id      int8
-	Jsonrpc string
-	Method  string
-	Params  []interface{}
+	Id      int8          `json:"id"`
+	Jsonrpc string        `json:"jsonrpc"`
+	Method  string        `json:"method"`
+	Params  []interface{} `json:"params"`
 }
 
 type Node struct {

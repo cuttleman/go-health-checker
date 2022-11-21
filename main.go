@@ -2,7 +2,6 @@ package main
 
 import (
 	"healthChecker"
-	"log"
 	"os"
 	"strconv"
 
@@ -20,13 +19,12 @@ func main() {
 	port := os.Getenv("PORT")
 
 	if port == "" {
-		log.Fatal("$PORT must be set")
+		port = "4000"
 	}
 
 	e := echo.New()
 
 	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(200, "Hello Health Checker")
