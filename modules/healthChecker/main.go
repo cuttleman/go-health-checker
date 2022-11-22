@@ -15,7 +15,7 @@ import (
 )
 
 func fetchRPC(node string, c chan<- Node) {
-	client := http.Client{Timeout: time.Millisecond * 500} // 500ms
+	client := http.Client{Timeout: time.Millisecond * 450} // 450ms
 	parameters := RpcRequest{1, "2.0", "eth_blockNumber", []interface{}{}}
 	pbytes, _ := json.Marshal(parameters)
 	pbuff := bytes.NewBuffer(pbytes)
