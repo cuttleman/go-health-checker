@@ -14,50 +14,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func getExtraChainInfo(chainId uint64) []gjson.Result {
-	client := http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get(ExtraRPCUrl)
-
-	CheckErr(err)
-	defer resp.Body.Close()
-	CheckCode(resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	chainJson := string(body)
-
-	chainInfoJSON := gjson.Parse(chainJson)
-
-	nodes := gjson.Get(chainInfoJSON.String(), strconv.Itoa(int(chainId))+".rpcs").Array()
-
-	return nodes
-}
-
-func getChainInfo() map[uint64][]gjson.Result {
-	client := http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get(BaseUrl)
-
-	CheckErr(err)
-	defer resp.Body.Close()
-	CheckCode(resp)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	chainJson := string(body)
-
-	bscChainInfoArr := gjson.Parse(chainJson).Array()
-
-	var chainInfo = make(map[uint64][]gjson.Result)
-
-	for _, data := range bscChainInfoArr {
-		chainId := gjson.Get(data.String(), "chainId").Uint()
-		rpc := gjson.Get(data.String(), "rpc").Array()
-		chainInfo[chainId] = rpc
-	}
-
-	return chainInfo
-}
-
-func fetchNode(node string, c chan<- Node) {
-	client := http.Client{Timeout: time.Second / 2}
+func fetchRPC(node string, c chan<- Node) {
+	client := http.Client{Timeout: time.Millisecond * 500} // 500ms
 	parameters := RpcRequest{1, "2.0", "eth_blockNumber", []interface{}{}}
 	pbytes, _ := json.Marshal(parameters)
 	pbuff := bytes.NewBuffer(pbytes)
@@ -95,45 +53,85 @@ func sortNodes(nodes []Node) []Node {
 	return nodes
 }
 
-// * Export
-func Execute(chainId uint64) (string, error) {
-	chainInfos := getChainInfo()
-	extraNodes := getExtraChainInfo(chainId)
+func fetchURL(url string, chainId uint64, c chan<- []gjson.Result) {
+	client := http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get(url)
 
-	c := make(chan Node)
-	nodes := []Node{}
-	chainNodes := chainInfos[chainId]
-	extraNodesLength := len(extraNodes)
+	CheckErr(err)
+	defer resp.Body.Close()
+	CheckCode(resp)
 
-	if extraNodesLength > 0 {
-		chainNodes = append(chainNodes, extraNodes...)
+	body, err := ioutil.ReadAll(resp.Body)
+	chainJson := string(body)
+
+	chainInfoJSON := gjson.Parse(chainJson)
+
+	rpcs := make([]gjson.Result, 0)
+	if url == BaseUrl {
+		rpcs = gjson.Get(chainInfoJSON.String(), "#(chainId=="+strconv.Itoa(int(chainId))+").rpc").Array()
+	} else {
+		rpcs = gjson.Get(chainInfoJSON.String(), strconv.Itoa(int(chainId))+".rpcs").Array()
 	}
 
-	nodesLength := len(chainNodes)
+	c <- rpcs
+}
 
-	if nodesLength > 0 {
-		for _, node := range chainNodes {
-			go fetchNode(node.String(), c)
+// * Export
+func Execute(chainId uint64) (string, error) {
+	var resourceUrls [2]string = [2]string{BaseUrl, ExtraRPCUrl}
+
+	c1 := make(chan []gjson.Result)
+	chainUrls := []gjson.Result{}
+
+	for _, url := range resourceUrls {
+		go fetchURL(url, chainId, c1)
+	}
+
+	fetchURLStart := time.Now()
+	for i := 0; i < len(resourceUrls); i++ {
+		urls := <-c1
+		chainUrls = append(chainUrls, urls...)
+	}
+	fetchURLResponseTime := time.Since(fetchURLStart)
+	fmt.Println("\nParallel URL Response Time :", fetchURLResponseTime)
+
+	// **********************************
+	// * get rpc urls ↑
+	// * rpc status check ↓
+	// **********************************
+
+	chainUrlLength := len(chainUrls)
+
+	if chainUrlLength == 0 {
+		return "", InvalidChainError
+	}
+
+	c2 := make(chan Node)
+	nodes := []Node{}
+
+	for _, chainUrl := range chainUrls {
+		go fetchRPC(chainUrl.String(), c2)
+	}
+
+	fetchRPCStart := time.Now()
+	for i := 0; i < chainUrlLength; i++ {
+		fetchedRPC := <-c2
+		if fetchedRPC.Url != "" && fetchedRPC.Height > 0 {
+			nodes = append(nodes, fetchedRPC)
 		}
+	}
+	fetchRPCResponseTime := time.Since(fetchRPCStart)
+	fmt.Println("Parallel RPC Response Time :", fetchRPCResponseTime)
 
-		for i := 0; i < nodesLength; i++ {
-			fetchedNode := <-c
-			if fetchedNode.Url != "" && fetchedNode.Height > 0 {
-				nodes = append(nodes, fetchedNode)
-			}
-		}
-
-		if len(nodes) > 0 {
-			sortedNodes := sortNodes(nodes)
-			fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
-			fmt.Println(sortedNodes)
-			fmt.Println(">---------------------------------------------------------------<")
-
-			return sortedNodes[0].Url, nil
-		}
-
+	if len(nodes) == 0 {
 		return "", RPCDeadError
 	}
 
-	return "", InvalidChainError
+	sortedNodes := sortNodes(nodes)
+	fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
+	fmt.Println(sortedNodes)
+	fmt.Println(">---------------------------------------------------------------<")
+
+	return sortedNodes[0].Url, nil
+
 }

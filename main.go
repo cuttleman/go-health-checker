@@ -36,12 +36,11 @@ func main() {
 		chainId := c.Param("id")
 		chainIdToInt, _ := strconv.Atoi(chainId)
 
-		start := time.Now()
 		// Health checker
+		start := time.Now()
 		greatNode, err := healthChecker.Execute(uint64(chainIdToInt))
 		responseTime := time.Since(start)
-
-		fmt.Println("HealthChecker Response time :", responseTime)
+		fmt.Println("HealthChecker Response Time :", responseTime)
 
 		result := new(Result)
 		statusCode := 200
