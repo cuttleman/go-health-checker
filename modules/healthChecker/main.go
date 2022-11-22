@@ -87,7 +87,12 @@ func fetchNode(node string, c chan<- Node) {
 	intHeight, _ := strconv.ParseInt(cleanedHeight, 16, 64)
 
 	c <- Node{node, latency.Milliseconds(), intHeight}
+}
 
+func sortNodes(nodes []Node) []Node {
+	sort.Sort(SortByLatencyWithHeight(nodes))
+
+	return nodes
 }
 
 // * Export
@@ -119,12 +124,12 @@ func Execute(chainId uint64) (string, error) {
 		}
 
 		if len(nodes) > 0 {
-			sort.Sort(SortByLatencyWithHeight(nodes))
+			sortedNodes := sortNodes(nodes)
 			fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
-			fmt.Println(nodes)
+			fmt.Println(sortedNodes)
 			fmt.Println(">---------------------------------------------------------------<")
 
-			return nodes[0].Url, nil
+			return sortedNodes[0].Url, nil
 		}
 
 		return "", RPCDeadError
