@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"healthChecker"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -34,8 +36,12 @@ func main() {
 		chainId := c.Param("id")
 		chainIdToInt, _ := strconv.Atoi(chainId)
 
+		start := time.Now()
 		// Health checker
 		greatNode, err := healthChecker.Execute(uint64(chainIdToInt))
+		responseTime := time.Since(start)
+
+		fmt.Println("HealthChecker Response time :", responseTime)
 
 		result := new(Result)
 		statusCode := 200
