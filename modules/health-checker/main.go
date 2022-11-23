@@ -73,6 +73,7 @@ func Execute(chainId uint64) (string, error) {
 
 	bytesToString := gjson.Parse(string(bytes)).String()
 	chainRpcs := gjson.Get(bytesToString, "#(chainId=="+strconv.Itoa(int(chainId))+").rpc").Array()
+	fmt.Println(chainRpcs)
 
 	chainUrlLength := len(chainRpcs)
 
@@ -103,7 +104,7 @@ func Execute(chainId uint64) (string, error) {
 
 	sortedNodes := sortNodes(nodes)
 	fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
-	fmt.Println(sortedNodes)
+	// fmt.Println(sortedNodes)
 	fmt.Println(">---------------------------------------------------------------<")
 
 	return sortedNodes[0].Url, nil

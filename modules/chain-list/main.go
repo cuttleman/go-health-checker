@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -41,10 +42,21 @@ func fetchURL(url string) string {
 	return chainInfoJSON
 }
 
-func toStringArray(g []gjson.Result) []string {
+func toStringArray(g []gjson.Result, rTrailingSlash bool) []string {
+	allKeys := make(map[string]bool)
 	result := []string{}
-	for _, value := range g {
-		result = append(result, value.String())
+	for _, item := range g {
+		strItem := item.String()
+		if strings.HasPrefix(strItem, "wss://") {
+			continue
+		}
+		if rTrailingSlash && strings.HasSuffix(strItem, "/") {
+			strItem = strItem[:len(strItem)-1]
+		}
+		if _, value := allKeys[strItem]; !value {
+			allKeys[strItem] = true
+			result = append(result, strItem)
+		}
 	}
 
 	return result
@@ -82,8 +94,8 @@ func Execute() {
 		_nativeCurrency := NativeCurrency{_nativeCurrencyName, _nativeCurrencySymbol, _nativeCurrencyDecimals}
 		_rpc = append(_rpc, _extraRpc...)
 
-		_strRpcs := toStringArray(_rpc)
-		_strFaucets := toStringArray(_faucets)
+		_strRpcs := toStringArray(_rpc, true)
+		_strFaucets := toStringArray(_faucets, false)
 
 		chainlist = append(chainlist, Chain{_name, _chain, _icon, _strRpcs, _strFaucets, _nativeCurrency, _infoURL, _shortName, _chainId, _networkId})
 	}
