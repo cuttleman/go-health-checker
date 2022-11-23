@@ -1,13 +1,14 @@
-package healthChecker
+package healthchecker
 
 import (
 	"bytes"
-	"chainList"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"server/internal/chainlist"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,48 @@ import (
 
 	"github.com/tidwall/gjson"
 )
+
+type RpcRequest struct {
+	Id      int8          `json:"id"`
+	Jsonrpc string        `json:"jsonrpc"`
+	Method  string        `json:"method"`
+	Params  []interface{} `json:"params"`
+}
+
+type Node struct {
+	Url     string
+	Latency int64
+	Height  int64
+}
+
+type SortByLatencyWithHeight []Node
+
+func (a SortByLatencyWithHeight) Len() int      { return len(a) }
+func (a SortByLatencyWithHeight) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a SortByLatencyWithHeight) Less(i, j int) bool {
+	h1 := a[i].Height
+	h2 := a[j].Height
+	l1 := a[i].Latency
+	l2 := a[j].Latency
+
+	if h2-h1 > 0 {
+		return false
+	}
+	if h2-h1 < 0 {
+		return true
+	}
+	if h1 == h2 {
+		if l1-l2 < 0 {
+			return true
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+var RPCDeadError error = errors.New("All RPC Nodes are Dead.")
+var InvalidChainError error = errors.New("Invalid Chain ID.")
 
 func fetchNode(node string, c chan<- Node) {
 	client := http.Client{Timeout: time.Second / 2} // 500ms
@@ -60,7 +103,7 @@ func readChainListFile() ([]byte, error) {
 
 	if err != nil {
 		fmt.Println("There is no chainlist data file. The file will be regenerated.")
-		chainList.Execute()
+		chainlist.Execute()
 		bytes, err = os.ReadFile("chainlist.json")
 	}
 
@@ -69,7 +112,11 @@ func readChainListFile() ([]byte, error) {
 
 // * Export
 func Execute(chainId uint64) (string, error) {
-	bytes, _ := readChainListFile()
+	bytes, err := readChainListFile()
+
+	if err != nil {
+		return "", err
+	}
 
 	bytesToString := gjson.Parse(string(bytes)).String()
 	chainRpcs := gjson.Get(bytesToString, "#(chainId=="+strconv.Itoa(int(chainId))+").rpc").Array()
@@ -104,7 +151,7 @@ func Execute(chainId uint64) (string, error) {
 
 	sortedNodes := sortNodes(nodes)
 	fmt.Println(">-------- Sorted RPC Node --------------------------------------<")
-	// fmt.Println(sortedNodes)
+	fmt.Println(sortedNodes)
 	fmt.Println(">---------------------------------------------------------------<")
 
 	return sortedNodes[0].Url, nil

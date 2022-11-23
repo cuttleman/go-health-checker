@@ -1,10 +1,11 @@
 package main
 
 import (
-	"chainList"
 	"fmt"
-	"healthChecker"
+	"net/http"
 	"os"
+	"server/internal/chainlist"
+	"server/internal/healthchecker"
 	"strconv"
 	"time"
 
@@ -28,15 +29,24 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet},
+	}))
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(200, "Hello Health Checker")
 	})
 
 	e.GET("/chain/update", func(c echo.Context) error {
-		chainList.Execute()
+		err := chainlist.Execute()
 
-		return c.String(200, "chain list update complete!")
+		if err != nil {
+			return c.String(500, "chain list update fail. reason : "+err.Error())
+		}
+
+		return c.String(200, "chain list update complete")
 	})
 
 	e.GET("/chain/:id", func(c echo.Context) error {
@@ -45,7 +55,7 @@ func main() {
 
 		// Health checker
 		start := time.Now()
-		greatNode, err := healthChecker.Execute(uint64(chainIdToInt))
+		greatNode, err := healthchecker.Execute(uint64(chainIdToInt))
 		responseTime := time.Since(start)
 		fmt.Println("healthChecker Response Time :", responseTime)
 

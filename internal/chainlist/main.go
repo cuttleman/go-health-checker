@@ -1,4 +1,4 @@
-package chainList
+package chainlist
 
 import (
 	"bytes"
@@ -12,6 +12,30 @@ import (
 	"time"
 
 	"github.com/tidwall/gjson"
+)
+
+type NativeCurrency struct {
+	Name     string `json:"name"`
+	Symbol   string `json:"symbol"`
+	Decimals int64  `json:"decimals"`
+}
+
+type ChainInfo struct {
+	Name           string         `json:"name"`
+	Chain          string         `json:"chain"`
+	Icon           string         `json:"icon"`
+	Rpc            []string       `json:"rpc"`
+	Faucets        []string       `json:"faucets"`
+	NativeCurrency NativeCurrency `json:"nativeCurrency"`
+	InfoURL        string         `json:"infoURL"`
+	ShortName      string         `json:"shortName"`
+	ChainId        int64          `json:"chainId"`
+	NetworkId      int64          `json:"networkId"`
+}
+
+const (
+	BaseUrl     = "https://chainid.network/chains.json"
+	ExtraRPCUrl = "https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.json"
 )
 
 func CheckErr(err error) {
@@ -71,11 +95,11 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func Execute() {
+func Execute() error {
 	baseList := fetchURL(BaseUrl)
 	extraList := fetchURL(ExtraRPCUrl)
 
-	chainlist := []Chain{}
+	chainlist := []ChainInfo{}
 	for _, chain := range gjson.Parse(baseList).Array() {
 		_name := gjson.Get(chain.String(), "name").String()
 		_chain := gjson.Get(chain.String(), "chain").String()
@@ -97,10 +121,12 @@ func Execute() {
 		_strRpcs := toStringArray(_rpc, true)
 		_strFaucets := toStringArray(_faucets, false)
 
-		chainlist = append(chainlist, Chain{_name, _chain, _icon, _strRpcs, _strFaucets, _nativeCurrency, _infoURL, _shortName, _chainId, _networkId})
+		chainlist = append(chainlist, ChainInfo{_name, _chain, _icon, _strRpcs, _strFaucets, _nativeCurrency, _infoURL, _shortName, _chainId, _networkId})
 	}
 
 	cbytes, _ := JSONMarshal(chainlist)
 
-	os.WriteFile("chainlist.json", cbytes, 0666)
+	err := os.WriteFile("chainlist.json", cbytes, 0666)
+
+	return err
 }
