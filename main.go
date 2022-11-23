@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"healthChecker"
+	healthChecker "healthChecker_"
 	"os"
 	"strconv"
 	"time"

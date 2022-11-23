@@ -2,7 +2,7 @@ module healthchecker-server
 
 go 1.19
 
-require healthChecker v1.0.0
+require healthChecker_ v1.0.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
@@ -35,4 +35,4 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 )
 
-replace healthChecker => ./modules/healthChecker
+replace healthChecker_ => ./modules/healthChecker_
