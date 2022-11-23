@@ -3,7 +3,7 @@
 Make sure you have [Go](http://golang.org/doc/install) version 1.17 or newer and the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) installed.
 
 ```sh
-$ go build -o bin/healthchecker-server -v .
+$ go build -o bin/healthChecker-server -v .
 $ heroku local
 ```
 

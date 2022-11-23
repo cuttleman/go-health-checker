@@ -1,5 +1,0 @@
-package chainlist
-
-func main() {
-
-}

@@ -1,8 +1,6 @@
-module healthchecker-server
+module healthChecker-server
 
 go 1.19
-
-require healthChecker_ v1.0.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
@@ -33,6 +31,12 @@ require (
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
+	healthChecker v1.0.0
+	chainList v1.0.0
+	
 )
 
-replace healthChecker_ => ./modules/healthChecker_
+replace (
+  healthChecker => ./modules/health-checker
+  chainList => ./modules/chain-list
+)

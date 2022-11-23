@@ -1,8 +1,9 @@
 package main
 
 import (
+	"chainList"
 	"fmt"
-	healthChecker "healthChecker_"
+	"healthChecker"
 	"os"
 	"strconv"
 	"time"
@@ -32,6 +33,12 @@ func main() {
 		return c.String(200, "Hello Health Checker")
 	})
 
+	e.GET("/chain/update", func(c echo.Context) error {
+		chainList.Execute()
+
+		return c.String(200, "chain list update complete!")
+	})
+
 	e.GET("/chain/:id", func(c echo.Context) error {
 		chainId := c.Param("id")
 		chainIdToInt, _ := strconv.Atoi(chainId)
@@ -40,7 +47,7 @@ func main() {
 		start := time.Now()
 		greatNode, err := healthChecker.Execute(uint64(chainIdToInt))
 		responseTime := time.Since(start)
-		fmt.Println("HealthChecker Response Time :", responseTime)
+		fmt.Println("healthChecker Response Time :", responseTime)
 
 		result := new(Result)
 		statusCode := 200
