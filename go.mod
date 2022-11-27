@@ -1,4 +1,4 @@
-module server
+module healthchecker-server
 
 go 1.19
 

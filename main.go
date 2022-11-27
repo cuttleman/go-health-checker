@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"healthchecker-server/internal/chainlist"
+	"healthchecker-server/internal/healthchecker"
 	"net/http"
 	"os"
-	"server/internal/chainlist"
-	"server/internal/healthchecker"
 	"strconv"
 	"time"
 
