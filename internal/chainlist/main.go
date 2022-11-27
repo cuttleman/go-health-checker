@@ -3,8 +3,8 @@ package chainlist
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -35,18 +35,18 @@ type ChainInfo struct {
 
 const (
 	BaseUrl     = "https://chainid.network/chains.json"
-	ExtraRPCUrl = "https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.json"
+	ExtraRPCUrl = "https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js"
 )
 
 func CheckErr(err error) {
 	if err != nil {
-		log.Fatalln("Error:", err)
+		fmt.Println("Error:", err)
 	}
 }
 
 func CheckCode(resp *http.Response) {
 	if resp.StatusCode != 200 {
-		log.Fatalln("Request failed with status:", resp.StatusCode)
+		fmt.Println("Request failed with status:", resp.StatusCode)
 	}
 }
 
@@ -60,10 +60,11 @@ func fetchURL(url string) string {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	chainJson := string(body)
+	if strings.HasPrefix(chainJson, "export default") {
+		chainJson = chainJson[len("export default"):]
+	}
 
-	chainInfoJSON := gjson.Parse(chainJson).String()
-
-	return chainInfoJSON
+	return chainJson
 }
 
 func toStringArray(g []gjson.Result, rTrailingSlash bool) []string {
@@ -113,7 +114,13 @@ func Execute() error {
 		_chainId := gjson.Get(chain.String(), "chainId").Int()
 		_networkId := gjson.Get(chain.String(), "networkId").Int()
 		_rpc := gjson.Get(chain.String(), "rpc").Array()
-		_extraRpc := gjson.Get(extraList, strconv.Itoa(int(_chainId))+".rpcs").Array()
+		_extraRpcArr := gjson.Get(extraList, strconv.Itoa(int(_chainId))+".rpcs").Array()
+		_extraRpc := []gjson.Result{}
+		for _, extra := range _extraRpcArr {
+			if extra.Type == gjson.String && extra.String() != "rpcWorking:false" {
+				_extraRpc = append(_extraRpc, extra)
+			}
+		}
 
 		_nativeCurrency := NativeCurrency{_nativeCurrencyName, _nativeCurrencySymbol, _nativeCurrencyDecimals}
 		_rpc = append(_rpc, _extraRpc...)
