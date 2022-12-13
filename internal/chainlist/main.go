@@ -34,8 +34,10 @@ type ChainInfo struct {
 }
 
 const (
-	BaseUrl     = "https://chainid.network/chains.json"
-	ExtraRPCUrl = "https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js"
+	BaseUrl       = "https://chainid.network/chains.json"
+	ExtraRPCUrl   = "https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js"
+	AssetsDir     = "assets"
+	ChainListPath = AssetsDir + "/chainlist.json"
 )
 
 func CheckErr(err error) {
@@ -133,7 +135,12 @@ func Execute() error {
 
 	cbytes, _ := JSONMarshal(chainlist)
 
-	err := os.WriteFile("chainlist.json", cbytes, 0666)
+	if _, readDirErr := os.ReadDir(AssetsDir); readDirErr != nil {
+		os.Mkdir(AssetsDir, os.ModePerm)
+		fmt.Println("The assets directory did not exist, so it was created.")
+	}
+
+	err := os.WriteFile(ChainListPath, cbytes, 0666)
 
 	return err
 }

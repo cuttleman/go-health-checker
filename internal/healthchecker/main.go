@@ -99,12 +99,12 @@ func sortNodes(nodes []Node) []Node {
 }
 
 func readChainListFile() ([]byte, error) {
-	bytes, err := os.ReadFile("chainlist.json")
+	bytes, err := os.ReadFile(chainlist.ChainListPath)
 
 	if err != nil {
 		fmt.Println("There is no chainlist data file. The file will be regenerated.")
 		chainlist.Execute()
-		bytes, err = os.ReadFile("chainlist.json")
+		bytes, err = os.ReadFile(chainlist.ChainListPath)
 	}
 
 	return bytes, err
