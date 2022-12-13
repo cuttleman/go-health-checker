@@ -36,7 +36,7 @@ func main() {
 	}))
 
 	e.GET("/", func(c echo.Context) error {
-		return c.String(200, "Hello Health Checker")
+		return c.String(200, "Hello Health Checker\n\n\nRenew Chainlist:\n\t- https://chain-healthchecker.fly.dev/chain/update\n\nGet Healthy RPC:\n\t- https://chain-healthchecker.fly.dev/chain/{chainId}")
 	})
 
 	e.GET("/chain/update", func(c echo.Context) error {
